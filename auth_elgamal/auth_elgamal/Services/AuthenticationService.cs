@@ -1,23 +1,21 @@
+using System.Security.Cryptography;
 using auth_elgamal.Models;
 using auth_elgamal.Storage;
 
 namespace auth_elgamal.Services;
 
-/// <summary>
-/// Authentication service (Day 8: registration only)
-/// </summary>
 public class AuthenticationService
 {
     private readonly IUserStorage _userStorage;
+
+    private readonly Dictionary<string, AuthChallenge> _activeChallenges = new();
+    private readonly object _lock = new();
 
     public AuthenticationService(IUserStorage userStorage)
     {
         _userStorage = userStorage;
     }
 
-    /// <summary>
-    /// Register a new user by storing username, password hash, and ElGamal public key
-    /// </summary>
     public RegistrationResponse Register(RegistrationRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Username))
@@ -34,5 +32,30 @@ public class AuthenticationService
         return ok
             ? new RegistrationResponse(true, "Registration successful")
             : new RegistrationResponse(false, "Registration failed");
+    }
+    
+    public AuthChallenge? GenerateChallenge(string username, TimeSpan? ttl = null)
+    {
+        if (!_userStorage.UserExists(username))
+            return null;
+
+        string challengeId = Guid.NewGuid().ToString();
+        string message = GenerateRandomChallengeMessage();
+        DateTime expiresAt = DateTime.UtcNow.Add(ttl ?? TimeSpan.FromMinutes(5));
+
+        var challenge = new AuthChallenge(challengeId, message, expiresAt);
+
+        lock (_lock)
+        {
+            _activeChallenges[challengeId] = challenge;
+        }
+
+        return challenge;
+    }
+    private static string GenerateRandomChallengeMessage()
+    {
+        byte[] bytes = new byte[32];
+        RandomNumberGenerator.Fill(bytes);
+        return Convert.ToBase64String(bytes);
     }
 }
