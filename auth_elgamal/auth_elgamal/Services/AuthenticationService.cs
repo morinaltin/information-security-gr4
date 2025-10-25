@@ -58,4 +58,41 @@ public class AuthenticationService
         RandomNumberGenerator.Fill(bytes);
         return Convert.ToBase64String(bytes);
     }
+    public AuthResponse Authenticate(AuthRequest request)
+    {
+        if (string.IsNullOrWhiteSpace(request.Username))
+            return new AuthResponse(false, "Invalid username");
+
+        AuthChallenge? challenge;
+        lock (_lock)
+        {
+            _activeChallenges.TryGetValue(request.ChallengeId, out challenge);
+        }
+        if (challenge is null)
+            return new AuthResponse(false, "Invalid challenge");
+
+        if (challenge.IsExpired())
+        {
+            lock (_lock)
+            {
+                _activeChallenges.Remove(request.ChallengeId);
+            }
+            return new AuthResponse(false, "Challenge expired");
+        }
+
+        var user = _userStorage.GetUser(request.Username);
+        if (user is null)
+            return new AuthResponse(false, "User not found");
+
+        bool ok = ElGamalSignatureOps.Verify(challenge.Message, request.Signature, user.PublicKey);
+        if (!ok)
+            return new AuthResponse(false, "Invalid signature");
+
+        lock (_lock)
+        {
+            _activeChallenges.Remove(request.ChallengeId);
+        }
+
+        return new AuthResponse(true, "Authentication successful");
+    }
 }
