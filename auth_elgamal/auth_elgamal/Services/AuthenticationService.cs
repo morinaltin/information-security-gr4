@@ -9,6 +9,7 @@ public class AuthenticationService
     private readonly IUserStorage _userStorage;
 
     private readonly Dictionary<string, AuthChallenge> _activeChallenges = new();
+    private readonly Dictionary<string, string> _sessions = new();
     private readonly object _lock = new();
 
     public AuthenticationService(IUserStorage userStorage)
@@ -93,6 +94,37 @@ public class AuthenticationService
             _activeChallenges.Remove(request.ChallengeId);
         }
 
-        return new AuthResponse(true, "Authentication successful");
+        string sessionToken = Guid.NewGuid().ToString();
+        lock (_lock)
+        {
+            _sessions[sessionToken] = request.Username;
+        }
+        _userStorage.UpdateLastLogin(request.Username);
+
+        return new AuthResponse(true, "Authentication successful", sessionToken);
+    }
+
+    public bool IsValidSession(string sessionToken)
+    {
+        lock (_lock)
+        {
+            return _sessions.ContainsKey(sessionToken);
+        }
+    }
+
+    public string? GetUsernameFromSession(string sessionToken)
+    {
+        lock (_lock)
+        {
+            return _sessions.GetValueOrDefault(sessionToken);
+        }
+    }
+
+    public bool RevokeSession(string sessionToken)
+    {
+        lock (_lock)
+        {
+            return _sessions.Remove(sessionToken);
+        }
     }
 }
