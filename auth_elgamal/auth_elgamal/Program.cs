@@ -1,21 +1,28 @@
 using auth_elgamal;
+using auth_elgamal.Client;
+using auth_elgamal.Services;
+using auth_elgamal.Storage;
 
-Console.WriteLine("=== Day 3: ElGamal sign/verify demo ===\n");
+Console.WriteLine("=== Day 14: End-to-end registration and login demo ===\n");
 
-var keyPair = ElGamalKeyGeneration.GenerateKeyPair(512);
-Console.WriteLine($"Public key: {keyPair.PublicKey}\n");
+var storage = new InMemoryUserStorage();
+var service = new AuthenticationService(storage);
 
-var message = "hello from elgamal";
-Console.WriteLine($"Message: {message}");
+var client = new AuthenticationClient(service);
 
-var signature = ElGamalSignatureOps.Sign(message, keyPair);
-Console.WriteLine($"Signature: {signature}");
+var register = client.Register("alice", "password123", 512);
+Console.WriteLine($"Register -> Success: {register.Success}, Message: {register.Message}");
 
-bool valid = ElGamalSignatureOps.Verify(message, signature, keyPair.PublicKey);
-Console.WriteLine(valid ? "✓ Verification PASSED" : "✗ Verification FAILED");
+var login = client.Login("alice");
+Console.WriteLine($"Login -> Success: {login.Success}, Message: {login.Message}");
 
-var tampered = message + "!";
-bool tamperedValid = ElGamalSignatureOps.Verify(tampered, signature, keyPair.PublicKey);
-Console.WriteLine(tamperedValid ? "✗ Tampered message incorrectly verified" : "✓ Tampered message correctly rejected");
+if (login.Success)
+{
+    var token = client.GetSessionToken();
+    Console.WriteLine($"Session token: {token}");
 
-Console.WriteLine("\n✓ Day 3 complete");
+    Console.WriteLine($"Session valid? {service.IsValidSession(token!)}");
+    Console.WriteLine($"Session user: {service.GetUsernameFromSession(token!)}");
+}
+
+Console.WriteLine("\n✓ Day 14 complete");
