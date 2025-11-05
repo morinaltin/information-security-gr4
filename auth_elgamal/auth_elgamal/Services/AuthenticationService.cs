@@ -7,14 +7,16 @@ namespace auth_elgamal.Services;
 public class AuthenticationService
 {
     private readonly IUserStorage _userStorage;
+    private readonly AuthSettings _settings;
 
     private readonly Dictionary<string, AuthChallenge> _activeChallenges = new();
     private readonly Dictionary<string, string> _sessions = new();
     private readonly object _lock = new();
 
-    public AuthenticationService(IUserStorage userStorage)
+    public AuthenticationService(IUserStorage userStorage, AuthSettings? settings = null)
     {
         _userStorage = userStorage;
+        _settings = settings ?? new AuthSettings();
     }
 
     public RegistrationResponse Register(RegistrationRequest request)
@@ -42,7 +44,8 @@ public class AuthenticationService
 
         string challengeId = Guid.NewGuid().ToString();
         string message = GenerateRandomChallengeMessage();
-        DateTime expiresAt = DateTime.UtcNow.Add(ttl ?? TimeSpan.FromMinutes(5));
+        var effectiveTtl = ttl ?? _settings.ChallengeTtl;
+        DateTime expiresAt = DateTime.UtcNow.Add(effectiveTtl);
 
         var challenge = new AuthChallenge(challengeId, message, expiresAt);
 

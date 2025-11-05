@@ -3,10 +3,11 @@ using auth_elgamal.Client;
 using auth_elgamal.Services;
 using auth_elgamal.Storage;
 
-Console.WriteLine("=== Day 14: End-to-end registration and login demo ===\n");
+Console.WriteLine("=== Day 16: End-to-end demo with configurable settings ===\n");
 
 var storage = new InMemoryUserStorage();
-var service = new AuthenticationService(storage);
+var settings = new AuthSettings { ChallengeTtl = TimeSpan.FromMinutes(2), DefaultKeySizeBits = 512 };
+var service = new AuthenticationService(storage, settings);
 
 var client = new AuthenticationClient(service);
 
@@ -24,5 +25,3 @@ if (login.Success)
     Console.WriteLine($"Session valid? {service.IsValidSession(token!)}");
     Console.WriteLine($"Session user: {service.GetUsernameFromSession(token!)}");
 }
-
-Console.WriteLine("\n✓ Day 14 complete");
