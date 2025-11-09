@@ -26,15 +26,15 @@ public RegistrationResponse Register(RegistrationRequest request)
         _logger.Info($"Register attempt: {request.Username}");
 
         if (string.IsNullOrWhiteSpace(request.Username))
-            return new RegistrationResponse(false, "Username cannot be empty");
+            return new RegistrationResponse(false, "Username cannot be empty", RegistrationErrorCode.UsernameEmpty);
 
         if (string.IsNullOrWhiteSpace(request.Password))
-            return new RegistrationResponse(false, "Password cannot be empty");
+            return new RegistrationResponse(false, "Password cannot be empty", RegistrationErrorCode.PasswordEmpty);
 
         if (_userStorage.UserExists(request.Username))
         {
             _logger.Warn($"Register failed: username exists - {request.Username}");
-            return new RegistrationResponse(false, "Username already exists");
+            return new RegistrationResponse(false, "Username already exists", RegistrationErrorCode.UserExists);
         }
 
         var user = new User(request.Username, request.Password, request.PublicKey);
@@ -42,12 +42,12 @@ public RegistrationResponse Register(RegistrationRequest request)
         if (ok)
         {
             _logger.Info($"Register success: {request.Username}");
-            return new RegistrationResponse(true, "Registration successful");
+            return new RegistrationResponse(true, "Registration successful", RegistrationErrorCode.None);
         }
         else
         {
             _logger.Error($"Register failed to persist: {request.Username}");
-            return new RegistrationResponse(false, "Registration failed");
+            return new RegistrationResponse(false, "Registration failed", RegistrationErrorCode.PersistFailed);
         }
     }
     
@@ -85,7 +85,7 @@ public AuthResponse Authenticate(AuthRequest request)
     {
         _logger.Info($"Authenticate attempt: {request.Username}");
         if (string.IsNullOrWhiteSpace(request.Username))
-            return new AuthResponse(false, "Invalid username");
+            return new AuthResponse(false, "Invalid username", null, AuthErrorCode.InvalidUsername);
 
         AuthChallenge? challenge;
         lock (_lock)
@@ -95,7 +95,7 @@ public AuthResponse Authenticate(AuthRequest request)
         if (challenge is null)
         {
             _logger.Warn($"Authenticate failed: invalid challenge for {request.Username}");
-            return new AuthResponse(false, "Invalid challenge");
+            return new AuthResponse(false, "Invalid challenge", null, AuthErrorCode.InvalidChallenge);
         }
 
         if (challenge.IsExpired())
@@ -105,21 +105,21 @@ public AuthResponse Authenticate(AuthRequest request)
                 _activeChallenges.Remove(request.ChallengeId);
             }
             _logger.Warn($"Authenticate failed: expired challenge {request.ChallengeId} for {request.Username}");
-            return new AuthResponse(false, "Challenge expired");
+            return new AuthResponse(false, "Challenge expired", null, AuthErrorCode.ChallengeExpired);
         }
 
         var user = _userStorage.GetUser(request.Username);
         if (user is null)
         {
             _logger.Warn($"Authenticate failed: user not found - {request.Username}");
-            return new AuthResponse(false, "User not found");
+            return new AuthResponse(false, "User not found", null, AuthErrorCode.UserNotFound);
         }
 
         bool ok = ElGamalSignatureOps.Verify(challenge.Message, request.Signature, user.PublicKey);
         if (!ok)
         {
             _logger.Warn($"Authenticate failed: invalid signature for {request.Username}");
-            return new AuthResponse(false, "Invalid signature");
+            return new AuthResponse(false, "Invalid signature", null, AuthErrorCode.InvalidSignature);
         }
 
         lock (_lock)
@@ -135,7 +135,7 @@ public AuthResponse Authenticate(AuthRequest request)
         _userStorage.UpdateLastLogin(request.Username);
         _logger.Info($"Authenticate success: session issued for {request.Username}");
 
-        return new AuthResponse(true, "Authentication successful", sessionToken);
+        return new AuthResponse(true, "Authentication successful", sessionToken, AuthErrorCode.None);
     }
 
     public bool IsValidSession(string sessionToken)

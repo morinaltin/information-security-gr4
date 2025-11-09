@@ -10,4 +10,4 @@ public record AuthChallenge(string ChallengeId, string Message, DateTime Expires
 public record AuthRequest(string Username, string ChallengeId, auth_elgamal.ElGamalSignature Signature);
 
 
-public record AuthResponse(bool Success, string Message, string? SessionToken = null);
+public record AuthResponse(bool Success, string Message, string? SessionToken = null, AuthErrorCode Code = AuthErrorCode.None);

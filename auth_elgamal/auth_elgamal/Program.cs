@@ -12,10 +12,10 @@ var service = new AuthenticationService(storage, settings, new ConsoleAuthLogger
 var client = new AuthenticationClient(service);
 
 var register = client.Register("alice", "password123", 512);
-Console.WriteLine($"Register -> Success: {register.Success}, Message: {register.Message}");
+Console.WriteLine($"Register -> Success: {register.Success}, Code: {register.Code}, Message: {register.Message}");
 
 var login = client.Login("alice");
-Console.WriteLine($"Login -> Success: {login.Success}, Message: {login.Message}");
+Console.WriteLine($"Login -> Success: {login.Success}, Code: {login.Code}, Message: {login.Message}");
 
 if (login.Success)
 {
