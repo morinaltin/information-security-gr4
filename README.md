@@ -1,3 +1,26 @@
+<table>
+  <tr>
+    <td width="150" align="center" valign="center">
+      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e1/University_of_Prishtina_logo.svg/1200px-University_of_Prishtina_logo.svg.png" width="120" alt="University Logo" />
+    </td>
+    <td valign="top">
+      <p><strong>University of Prishtina</strong></p>
+      <p>Faculty of Computer and Electrical Engineering</p>
+      <p>Computer and Software Engineering - Masters Programme </p>
+      <p><strong>Course:</strong> “Information Security”</p>
+      <p><strong>Professor:</strong> Dr. techn. Blerim Rexha , PhD Mërgim Hoti</p>
+      <p><strong>Students (Gr. 4):</strong></p>
+      <ul>
+        <li>Altin Morina</li>
+        <li>Endri Binaku</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+
+---
+
+
 # ElGamal Authentication System
 
 A cryptographic authentication system that implements passwordless authentication using **ElGamal digital signatures** and a challenge-response protocol. This project demonstrates how to build a secure authentication system without transmitting passwords during login.
